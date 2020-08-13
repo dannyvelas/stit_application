@@ -2,7 +2,7 @@
 
 ## Get Started:
 1. Download: `git clone https://github.com/dannyvelas/stit_application.git`
-2. Get Dependencies: `cd stit_applicatoin && npm install`
+2. Get Dependencies: `cd stit_application && npm install`
 3. Run: `npm run dev`
 
 ## Play
