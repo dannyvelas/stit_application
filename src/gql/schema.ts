@@ -16,7 +16,8 @@ export const typeDefs =`
   type Business {
     businessId: ID!
     name: String!
-    isClosed: Bool!
+    isClosed: Boolean!
+    url: String!
     rating: Float!
     location: String!
     phone: String!
@@ -39,7 +40,9 @@ export const typeDefs =`
       password: String!
     ): User!
 
-    setFavorite(businessId: ID!): String!
-    unsetFavorite(businessId: ID!): String!
+    setFavorite(businessId: ID!): Boolean!
+    unsetFavorite(businessId: ID!): Boolean!
+
+    reserve(businessId: String!): ID!
   }
 `;

@@ -32,7 +32,7 @@ const server = new ApolloServer({
       const token = req.header('x-auth-token');
 
       if(token) {
-        const decoded:any = jwt.verify(token, String(process.env.SECRET));
+        const decoded:any = jwt.verify(token, String(process.env.JWT_SECRET));
         userId = decoded.userId;
       }
     } catch (err) {
@@ -53,6 +53,7 @@ const server = new ApolloServer({
     return err;
   }
 });
+server.applyMiddleware({ app });
 
 
 // Listen on port

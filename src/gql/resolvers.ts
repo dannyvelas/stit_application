@@ -2,7 +2,6 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import axios from 'axios';
 import validator from 'validator';
-import fs from 'fs';
 require('dotenv').config();
 
 const authenticated = (next:any) => (parent: any, args: any, context: any, info: any) => {
@@ -15,7 +14,7 @@ const authenticated = (next:any) => (parent: any, args: any, context: any, info:
 
 export const resolvers = { 
   Query : {
-    Businesses: authenticated(async (_: any, args: any, context: any, __: any) => {
+    Businesses: authenticated(async (_: any, args: any, __: any, ___: any) => {
       const location = args.location ? args.location : 'nyc';
 
       const result = await axios.get(
@@ -26,7 +25,17 @@ export const resolvers = {
         }
       );
 
-      console.log(result);
+      return result.data.businesses.map((business:any) => {
+        return {
+          businessId: business.id,
+          name: business.name,
+          isClosed: business.is_closed,
+          url: business.url,
+          rating: business.rating,
+          location: business.location.display_address.join(" "),
+          phone: business.display_phone
+        }
+      });
     }),
   },
 
@@ -97,6 +106,7 @@ export const resolvers = {
           userId,
           firstName: trimmedFirstName,
           lastName: trimmedLastName,
+          email: lcTrimmedEmail,
           token
         }
       } catch(err) {
@@ -131,14 +141,15 @@ export const resolvers = {
 
         if(!isMatch) return Error("Invalid Credentials.");
 
-        const payload = { userId: user.id };
+        const payload = { userId: user.user_id };
         const secret = String(process.env.JWT_SECRET);
         const token = jwt.sign(payload, secret, { expiresIn:'1h' });
 
         return {
-          userId: user.id,
+          userId: user.user_id,
           firstName: user.first_name,
           lastName: user.last_name,
+          email: user.email,
           token
         }
       } catch(err) {
@@ -156,7 +167,8 @@ export const resolvers = {
           `
           SELECT * FROM users_to_favorite_businesses
           WHERE user_id = $1 AND business_id = $2
-          `
+          `,
+          [ context.userId, args.businessId ]
         );
 
         if(favoritedSearch.rowCount !== 0) {
@@ -167,11 +179,11 @@ export const resolvers = {
           `
           INSERT INTO users_to_favorite_businesses(user_id, business_id)
           VALUES($1, $2)
-          `
+          `,
           [ context.userId, args.businessId ]
         );
 
-        return "Success."
+        return true;
       } catch(err) {
         console.error(err.stack);
       } finally {
@@ -187,7 +199,8 @@ export const resolvers = {
           `
           SELECT * FROM users_to_favorite_businesses
           WHERE user_id = $1 AND business_id = $2
-          `
+          `,
+          [ context.userId, args.businessId ]
         );
 
         if(favoritedSearch.rowCount !== 1) {
@@ -198,11 +211,57 @@ export const resolvers = {
           `
           DELETE FROM users_to_favorite_businesses
           WHERE user_id = $1 AND business_id = $2
-          `
+          `,
           [ context.userId, args.businessId ]
         );
 
-        return "Success."
+        return true;
+      } catch(err) {
+        console.error(err.stack);
+      } finally {
+        client.release();
+      }
+    }),
+
+    reserve: authenticated(async (_:any, args: any, context: any, __:any) => {
+      const client = await context.pool.connect();
+
+      try {
+        const reservationAmountSearch = await client.query(
+          `SELECT * FROM users_to_reservations WHERE user_id = $1`, [ context.userId ]
+        );
+
+        if(reservationAmountSearch.rowCount > 3) {
+          return Error("Error: A user is denied more than three reservations.");
+        }
+
+        const alreadyReservedSearch = await client.query(
+          `SELECT * FROM users_to_reservations a
+            LEFT JOIN reservations b
+              ON a.reservation_id = b.reservation_id
+            WHERE user_id = $1 AND business_id = $2;`,
+          [ context.userId, args.businessId ]
+        );
+
+        if(alreadyReservedSearch.rowCount === 1) {
+          return Error("Error: You can only reserve at a restaurant once");
+        }
+
+        const result = await client.query(
+          `
+          WITH reservation_id AS (
+            INSERT INTO reservations(status, business_id)
+              VALUES('PENDING', $1)
+              RETURNING reservation_id
+          )
+          INSERT INTO users_to_reservations(user_id, reservation_id)
+            VALUES($2, (SELECT reservation_id FROM reservation_id))
+          RETURNING reservation_id;
+          `,
+          [ args.businessId, context.userId ]
+        );
+
+        return result.rows[0].reservation_id
       } catch(err) {
         console.error(err.stack);
       } finally {
