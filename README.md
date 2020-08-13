@@ -16,19 +16,19 @@
 
 ### Register
 ```
-mutation  {
-	register(
-		firstName: "Daniel",
-		lastName: "Velasquez",
-		email: "myemail@gmail.com",
-		password: "fakepassword"
-	)  {
-		userId
-		firstName
-		lastName
-		email
-		token
-	}
+mutation {
+  register(
+    firstName: "Daniel",
+    lastName: "Velasquez",
+    email: "danivelas4@gmail.com",
+    password: "fakepassword"
+  ) {
+    userId
+    firstName
+    lastName
+    email
+    token
+  }
 }
 ```
 
