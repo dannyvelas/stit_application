@@ -11,17 +11,25 @@
   "author": "Daniel Velasquez",
   "license": "ISC",
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.2",
+    "@types/cors": "^2.8.7",
     "@types/express": "^4.17.7",
     "@types/jsonwebtoken": "^8.5.0",
-    "@types/mongoose": "^5.7.36",
+    "@types/pg": "^7.14.4",
+    "@types/validator": "^13.1.0",
     "nodemon": "^2.0.4",
     "ts-node": "^8.10.2",
     "typescript": "^3.9.7"
   },
   "dependencies": {
+    "apollo-server-express": "^2.16.1",
+    "axios": "^0.19.2",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "jsonwebtoken": "^8.5.1",
-    "mongoose": "^5.9.28"
+    "pg": "^8.3.0",
+    "validator": "^13.1.1"
   }
 }
