@@ -14,6 +14,66 @@ const authenticated = (next:any) => (parent: any, args: any, context: any, info:
 
 export const resolvers = { 
   Query : {
+    User: authenticated(async (_:any, __: any, context: any) => {
+      const client = await context.pool.connect();
+
+      try {
+        const result = await client.query("SELECT * FROM users WHERE user_id = $1", [ context.userId ]);
+        const user = result.rows[0];
+
+        return {
+          userId: user.user_id,
+          firstName: user.first_name,
+          lastName: user.last_name,
+          email: user.email,
+          token: context.req.header('x-auth-token')
+        }
+      } catch(err) {
+        console.log(err.stack);
+      } finally {
+        client.release();
+      }
+    }),
+
+    Users: authenticated(async (_:any, __: any, context: any) => {
+      const client = await context.pool.connect();
+
+      try {
+        const result = await client.query("SELECT * FROM users");
+        return result.rows.map((user:any) => {
+          return {
+            userId: user.user_id,
+            firstName: user.first_name,
+            lastName: user.last_name,
+            email: user.email
+          }
+        });
+      } catch(err) {
+        console.log(err.stack);
+      } finally {
+        client.release();
+      }
+    }),
+
+    Reservations: authenticated(async (_:any, __: any, context: any) => {
+      const client = await context.pool.connect();
+
+      try {
+        const result = await client.query("SELECT * FROM reservations");
+
+        return result.rows.map((reservation:any) => {
+          return {
+            reservationId: reservation.reservation_id,
+            status: reservation.status,
+          }
+        });
+      } catch(err) {
+        console.log(err.stack);
+      } finally {
+        client.release();
+      }
+    }),
+
     Businesses: authenticated(async (_: any, args: any, __: any, ___: any) => {
       const location = args.location ? args.location : 'nyc';
 
@@ -25,18 +85,99 @@ export const resolvers = {
         }
       );
 
-      return result.data.businesses.map((business:any) => {
-        return {
-          businessId: business.id,
-          name: business.name,
-          isClosed: business.is_closed,
-          url: business.url,
-          rating: business.rating,
-          location: business.location.display_address.join(" "),
-          phone: business.display_phone
-        }
-      });
+      return result.data.businesses.map((business:any) => yelpBusinessToGraphQL(business));
     }),
+  },
+
+  User : {
+    reservations: async (parent:any, _: any, context: any) => {
+      const client = await context.pool.connect();
+
+      try {
+        const result = await client.query(
+          `SELECT c.reservation_id, c.status, c.business_id FROM users a
+            LEFT JOIN users_to_reservations b 
+              ON a.user_id = b.user_id
+            LEFT JOIN reservations c
+              ON b.reservation_id = c.reservation_id
+           WHERE a.user_id = $1
+          `, [ parent.userId ]
+        );
+
+        return result.rows.map((reservation:any) => {
+          return {
+            reservationId: reservation.reservation_id,
+            status: reservation.status,
+          }
+        });
+      } catch(err) {
+        console.log(err.stack);
+      } finally {
+        client.release();
+      }
+    },
+
+    favorites: async (parent:any, _: any, context: any) => {
+      const client = await context.pool.connect();
+
+      try {
+        const result = await client.query(
+          `SELECT b.business_id FROM users a
+            LEFT JOIN users_to_favorite_businesses b
+              ON a.user_id = b.user_id
+           WHERE a.user_id = $1;
+          `, [ parent.userId ]
+        );
+
+        return result.rows
+          .map((row:any) => row.business_id)
+          .map(async (businessId:string) => {
+
+          const result = await axios.get(
+            `https://api.yelp.com/v3/businesses/${businessId}`, {
+              headers: {
+                'Authorization': String(process.env.YELP_HEADER)
+              }
+            }
+          );
+
+          return yelpBusinessToGraphQL(result.data);
+        });
+      } catch(err) {
+        console.log(err.stack);
+      } finally {
+        client.release();
+      }
+    }
+  },
+
+  Reservation : {
+    business: async (parent:any, _: any, context: any) => {
+      const client = await context.pool.connect();
+
+      try {
+        const result = await client.query(
+          `SELECT business_id FROM reservations WHERE reservation_id = $1
+          `, [ parent.reservationId ]
+        );
+
+        const businessId = result.rows[0].business_id;
+
+        const getBusiness = await axios.get(
+          `https://api.yelp.com/v3/businesses/${businessId}`, {
+            headers: {
+              'Authorization': String(process.env.YELP_HEADER)
+            }
+          }
+        );
+
+        return yelpBusinessToGraphQL(getBusiness.data);
+      } catch(err) {
+        console.log(err.stack);
+      } finally {
+        client.release();
+      }
+    },
   },
 
   Mutation: {
@@ -270,3 +411,16 @@ export const resolvers = {
     }),
   },
 };
+
+
+function yelpBusinessToGraphQL(business:any) {
+  return {
+    businessId: business.id,
+    name: business.name,
+    isClosed: business.is_closed,
+    url: business.url,
+    rating: business.rating,
+    location: business.location.display_address.join(" "),
+    phone: business.display_phone
+  }
+}

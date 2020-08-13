@@ -11,6 +11,16 @@ export const typeDefs =`
     lastName: String!
     email: String!
     token: String!
+
+    reservations: [Reservation!]
+    favorites: [Business!]
+  }
+
+  type Reservation {
+    reservationId: ID!
+    status: RESERVATION_STATUS!
+
+    business: Business!
   }
 
   type Business {
@@ -24,6 +34,9 @@ export const typeDefs =`
   }
 
   type Query {
+    User: User
+    Users: [User!]
+    Reservations: [Reservation!]
     Businesses(location: String): [Business!]
   }
 
