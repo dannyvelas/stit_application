@@ -34,17 +34,17 @@ mutation {
 
 ### Login
 ```
-mutation  {
-	login(
-		email: "myemail@gmail.com",
-		password: "fakepassword"
-	)  {
-		userId
-		firstName
-		lastName
-		email
-		token
-	}
+mutation {
+  login(
+    email: "myemail@gmail.com",
+    password: "fakepassword"
+  ) {
+    userId
+    firstName
+    lastName
+    email
+    token
+  }
 }
 ```
 
