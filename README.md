@@ -20,7 +20,7 @@ mutation {
   register(
     firstName: "Daniel",
     lastName: "Velasquez",
-    email: "danivelas4@gmail.com",
+    email: "myemail@gmail.com",
     password: "fakepassword"
   ) {
     userId
