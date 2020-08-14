@@ -78,7 +78,7 @@ export const resolvers = {
       const location = args.location ? args.location : 'nyc';
 
       const result = await axios.get(
-        `https://api.yelp.com/v3/businesses/search?location=${location}`, {
+        `https://api.yelp.com/v3/businesses/search?location=${location}&categories=restaurants,all`, {
           headers: {
             'Authorization': String(process.env.YELP_HEADER)
           }
@@ -126,7 +126,11 @@ export const resolvers = {
 
       try {
         const result = await client.query(
-          `SELECT b.business_id FROM users a LEFT JOIN users_to_favorite_businesses b ON a.user_id = b.user_id WHERE a.user_id = $1;
+          `
+          SELECT b.business_id FROM users a
+            LEFT JOIN users_to_favorite_businesses b
+              ON a.user_id = b.user_id
+          WHERE a.user_id = $1;
           `, [ parent.userId ]
         );
 
