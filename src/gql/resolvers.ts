@@ -45,7 +45,8 @@ export const resolvers = {
             userId: user.user_id,
             firstName: user.first_name,
             lastName: user.last_name,
-            email: user.email
+            email: user.email,
+            token: ""
           }
         });
       } catch(err) {
