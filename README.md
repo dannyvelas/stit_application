@@ -122,3 +122,27 @@ query {
     }
 }
 ```
+
+### See all users in DB
+```
+query {
+  Users {
+    firstName
+    lastName
+    email
+  }
+}
+```
+
+### See all reservations In DB
+```
+query {
+  Reservations {
+    reservationId
+    status
+    business {
+      name
+    }
+  }
+}
+```
