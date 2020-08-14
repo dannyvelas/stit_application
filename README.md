@@ -18,7 +18,7 @@
 
 ## A note about implementation
 1. According to the spec, there is an external endpoint that would determine the success of a reservation. This did not seem to me to be provided, so I simply left every reservation request as 'PENDING'.
-2. The spec called for a /logout endpoint and I did not provide one. I could've created an extra table in the database (or used something like REDIS) to act as a blacklist for JWT tokens that ought not to be valid, but for simplicity I opted not to. Usually, I have tokens expire within 1 hour (as is the case here), and I send a user new ones before they expire. This makes a logout endpoint unnecessary.
+2. The spec called for a /logout endpoint and I did not provide one. I could've created an extra table in the database (or used something like REDIS) to act as a blacklist for JWT tokens that ought not to be valid, but for simplicity I opted not to. Usually, I have tokens expire within 1 hour (as is the case here), and I send a logged-in user new ones before they expire. By this method, the front-end could take care of a logout by simply clearing the token from the client-side storage.
 
 ### Register
 ```
