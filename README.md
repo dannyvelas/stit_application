@@ -8,7 +8,7 @@
 ## Play
 1. Go to [http://localhost:5000/graphql](http://localhost:5000/graphql)
 2. Run any of the available queries below
-3. Note: to run any query besides regiser/login, you must get the token returned by the register/login endpoint and place it in the http header 'x-auth-token'.
+3. Note: to run any query besides register/login, you must get the token returned by the register/login endpoint and place it in the http header 'x-auth-token'.
 
 ## A note about implementation
 1. According to the spec, there is an external endpoint that would determine the success of a reservation. This did not seem to me to be provided, so I simply left every reservation request as 'PENDING'.
