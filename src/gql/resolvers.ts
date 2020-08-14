@@ -104,7 +104,11 @@ export const resolvers = {
           `, [ parent.userId ]
         );
 
-        return result.rows.map((reservation:any) => {
+        // strangely, with no matches - a object with all null properties is returned.
+        // the filter statement removes this object
+        return result.rows
+          .filter((reservation:any) => reservation.reservation_id) 
+          .map((reservation:any) => {
           return {
             reservationId: reservation.reservation_id,
             status: reservation.status,
@@ -122,15 +126,15 @@ export const resolvers = {
 
       try {
         const result = await client.query(
-          `SELECT b.business_id FROM users a
-            LEFT JOIN users_to_favorite_businesses b
-              ON a.user_id = b.user_id
-           WHERE a.user_id = $1;
+          `SELECT b.business_id FROM users a LEFT JOIN users_to_favorite_businesses b ON a.user_id = b.user_id WHERE a.user_id = $1;
           `, [ parent.userId ]
         );
 
+        // strangely, with no matches - a object with all null properties is returned.
+        // the filter statement removes this object
         return result.rows
           .map((row:any) => row.business_id)
+          .filter((businessId:any) => businessId)
           .map(async (businessId:string) => {
 
           const result = await axios.get(
